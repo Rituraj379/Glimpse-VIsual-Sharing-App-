@@ -1,98 +1,82 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
-import { HiMenu } from 'react-icons/hi';
-import { AiFillCloseCircle } from 'react-icons/ai';
+import { Link, NavLink } from 'react-router-dom';
+import { IoHome } from 'react-icons/io5';
+import { HiSparkles } from 'react-icons/hi2';
 
-import { Sidebar, Navbar, Feed, Pindetail, Createpin, Search, UserProfile } from '../components';
-import { sanityClient } from '../client';
-import { userQuery } from '../utils/data';
 import logo from '../Assets0/logo.png';
+import { categories } from '../utils/data';
 
-function Home() {
-  const [toggleSidebar, setToggleSidebar] = useState(false);
-  const [user, setUser] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const scrollRef = useRef(null);
+const isNotActiveStyle =
+  'group flex items-center rounded-2xl px-4 py-3 gap-3 text-slate-500 hover:text-slate-900 hover:bg-white/80 transition-all duration-200 ease-in-out capitalize';
+const isActiveStyle =
+  'group flex items-center rounded-2xl px-4 py-3 gap-3 font-bold bg-[#1f2937] text-white shadow-lg transition-all duration-200 ease-in-out capitalize';
 
-  const userInfo = localStorage.getItem('user');
-  const parsedUser = userInfo ? JSON.parse(userInfo) : null;
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (!parsedUser) return;
-
-      const query = userQuery(parsedUser._id);
-      try {
-        const result = await sanityClient.fetch(query);
-        setUser(result[0]);
-      } catch (error) {
-        console.error('❌ Error fetching user:', error);
-      }
-    };
-
-    fetchUser();
-  }, [userInfo]);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo(0, 0);
-  }, []);
-
-  // Disable scroll on mobile when sidebar is open
-  useEffect(() => {
-    document.body.style.overflow = toggleSidebar ? 'hidden' : 'auto';
-  }, [toggleSidebar]);
+function Sidebar({ user, closeToggle }) {
+  const handleCloseSidebar = () => {
+    if (closeToggle) {
+      closeToggle(false);
+    }
+  };
 
   return (
-    <div className='flex bg-gray-50 md:flex-row flex-col h-screen transition-height duration-75 ease-out'>
-      
-      {/* Sidebar for Desktop */}
-      <div className='hidden md:flex h-screen flex-initial w-[240px]'>
-        <Sidebar user={user} />
-      </div>
-
-      {/* Mobile Top Bar */}
-      <div className='flex md:hidden flex-row'>
-        <div className='flex justify-between items-center p-2 shadow-md w-full'>
-          <HiMenu fontSize={40} className='cursor-pointer text-3xl' onClick={() => setToggleSidebar(true)} />
-          <Link to='/'>
-            <img src={logo} alt='logo' className='w-28' />
-          </Link>
-          <Link to={`/user-profile/${user?._id}`}>
-            <img
-              src={user?.image || 'https://i.stack.imgur.com/l60Hf.png'}
-              alt='user profile'
-              className='w-10 h-10 rounded-full object-cover border-2 border-gray-300'
-            />
-          </Link>
-        </div>
-
-        {/* Mobile Sidebar */}
-        <div
-          className={`fixed top-0 left-0 h-screen z-50 bg-white shadow-lg transition-transform duration-300 ease-in-out 
-            ${toggleSidebar ? 'translate-x-0' : '-translate-x-full'} w-[240px]`}
-        >
-          <div className='absolute w-full flex justify-end items-center p-2'>
-            <AiFillCloseCircle fontSize={30} className='cursor-pointer' onClick={() => setToggleSidebar(false)} />
+    <div className="glass-panel mx-3 my-3 flex h-[calc(100vh-1.5rem)] w-[258px] flex-col justify-between overflow-y-scroll rounded-[28px] px-3 py-4 hide-scrollbar md:mx-4 md:my-4 md:w-[280px] md:rounded-[32px] md:px-4 md:py-5">
+      <div className="flex flex-col">
+        <Link to="/" className="flex items-center gap-3 px-2 py-2 md:px-3" onClick={handleCloseSidebar}>
+          <div className="rounded-2xl bg-gradient-to-br from-[#ff7a59] via-[#ff4d6d] to-[#d7263d] p-3 shadow-lg">
+            <HiSparkles className="text-xl text-white" />
           </div>
-          <Sidebar user={user} closeToggle={setToggleSidebar} />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Discover</p>
+            <img src={logo} alt="logo" className="mt-1 h-9 w-auto object-contain" />
+          </div>
+        </Link>
+
+        <div className="mt-5 rounded-[24px] bg-white/70 p-3 md:mt-6 md:rounded-[28px] md:p-4">
+          <NavLink
+            to="/"
+            className={({ isActive }) => (isActive ? isActiveStyle : isNotActiveStyle)}
+            onClick={handleCloseSidebar}
+          >
+            <IoHome />
+            Home
+          </NavLink>
+
+          <div className="mt-5 md:mt-6">
+            <div className="mb-3 px-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Collections</p>
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">Discover categories</h3>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {categories.map((category) => (
+                <NavLink
+                  key={category.name}
+                  to={`/category/${category.name}`}
+                  className={({ isActive }) => (isActive ? isActiveStyle : isNotActiveStyle)}
+                  onClick={handleCloseSidebar}
+                >
+                  <img src={category.image} className="h-10 w-10 rounded-2xl object-cover shadow-sm" alt={category.name} />
+                  <span>{category.name}</span>
+                </NavLink>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className='pb-2 flex-1 h-screen overflow-y-scroll' ref={scrollRef}>
-        <Navbar searchTerm={searchTerm} setSearchTerm={setSearchTerm} user={user} />
-
-        <Routes>
-          <Route path='/' element={<Feed searchTerm={searchTerm} />} />
-          <Route path='/category/:categoryId' element={<Feed searchTerm={searchTerm} />} />
-          <Route path='/pindetail/:pinId' element={<Pindetail user={user} />} />
-          <Route path='/create-pin' element={<Createpin user={user} />} />
-          <Route path='/search' element={<Search searchTerm={searchTerm} user={user} />} />
-          <Route path='/user-profile/:userId' element={<UserProfile user={user} />} />
-        </Routes>
-      </div>
+      {user && (
+        <Link
+          to={`/user-profile/${user._id}`}
+          className="mt-4 flex items-center gap-3 rounded-[22px] bg-[#111827] px-4 py-3.5 text-white shadow-xl md:mt-5 md:rounded-[24px] md:py-4"
+          onClick={handleCloseSidebar}
+        >
+          <img src={user.image} className="h-12 w-12 rounded-2xl object-cover" alt="user-profile" />
+          <div className="min-w-0">
+            <p className="truncate text-sm text-slate-300">Signed in as</p>
+            <p className="truncate font-bold">{user.userName}</p>
+          </div>
+        </Link>
+      )}
     </div>
   );
 }
 
-export default Home;
+export default Sidebar;

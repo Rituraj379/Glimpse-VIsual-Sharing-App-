@@ -1,45 +1,58 @@
-import React, { useState, useEffect } from 'react';
-import { sanityClient } from '../Client';
+import { useEffect, useState } from 'react';
+
+import { getPins } from '../utils/api';
 import MasonryLayout from './MasonryLayout';
-import { feedQuery, searchQuery } from '../utils/data';
 import Spinner from './Spinner';
-import { MdYoutubeSearchedFor } from 'react-icons/md';
 
-
-const MAX_PINS = 200;
 function Search({ searchTerm }) {
-  const [pins, setPins] = useState(null);
-  const [loading, setLoading] = useState(false); // ✅ typo fixed: 'flase' → 'false'
+  const [pins, setPins] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setLoading(true); // Always start with loading true on any change
-    if (searchTerm) {
-      const query = searchQuery(searchTerm.toLowerCase()); // ✅ 'tolowerCase' → 'toLowerCase'
-      sanityClient.fetch(query).then((data) => {
-        setPins(data);
-        setLoading(false);
-      });
-    } else {
-      sanityClient.fetch(feedQuery).then((data) => {
-        setPins(data);
-        setLoading(false);
-      });
-    }
+    let isMounted = true;
+
+    const fetchSearchResults = async () => {
+      try {
+        setLoading(true);
+        const data = await getPins({ search: searchTerm.trim() });
+        if (isMounted) {
+          setPins(data || []);
+        }
+      } catch (error) {
+        console.error('Error searching pins', error);
+        if (isMounted) {
+          setPins([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchSearchResults();
+
+    return () => {
+      isMounted = false;
+    };
   }, [searchTerm]);
 
   return (
-    <div className="px-2 w-full">
+    <div className="w-full">
       {loading && <Spinner message="Searching for Pins" />}
-      {/* MasonryLayout temporarily removed for debugging */}
-      {Array.isArray(pins) && pins.length !== 0 && (
-        <div style={{color: 'red', fontWeight: 'bold'}}>Test: Pins loaded ({pins.length})</div>
+      {!loading && pins.length > 0 && (
+        <div className="glass-panel overflow-hidden rounded-[28px] p-3 md:rounded-[32px] md:p-5">
+          <MasonryLayout pins={pins} />
+        </div>
       )}
-      {Array.isArray(pins) && pins.length === 0 && searchTerm !== '' && !loading && (
-         <div className="mt-10 text-center text-xl">No Pins Found</div>
+      {!loading && pins.length === 0 && searchTerm !== '' && (
+        <div className="glass-panel mt-3 rounded-[28px] p-8 text-center md:mt-4 md:rounded-[32px] md:p-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Search</p>
+          <div className="mt-3 text-2xl font-bold text-slate-900">No pins found for "{searchTerm}"</div>
+        </div>
       )}
     </div>
   );
 }
 
 export default Search;
-MdYoutubeSearchedFor

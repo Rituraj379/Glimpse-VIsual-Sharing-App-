@@ -1,8 +1,74 @@
 @import "tailwindcss";
 
-body {
-  font-family: 'Lato', sans-serif;
+:root {
+  --glimpse-bg: linear-gradient(135deg, #f7efe6 0%, #f4f7fb 45%, #eef3f1 100%);
+  --glimpse-panel: rgba(255, 255, 255, 0.76);
+  --glimpse-panel-strong: rgba(255, 255, 255, 0.92);
+  --glimpse-border: rgba(35, 31, 32, 0.08);
+  --glimpse-shadow: 0 24px 80px rgba(26, 32, 44, 0.12);
 }
-.hide scroll-bar::-webkit-scrollbar {
+
+html,
+body,
+#root {
+  font-family: 'Lato', sans-serif;
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  background: var(--glimpse-bg);
+  color: #18181b;
+  overflow-x: hidden;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.app-shell {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(255, 127, 80, 0.18), transparent 24rem),
+    radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.12), transparent 20rem),
+    var(--glimpse-bg);
+}
+
+.glass-panel {
+  background: var(--glimpse-panel);
+  border: 1px solid var(--glimpse-border);
+  box-shadow: var(--glimpse-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.hero-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: minmax(300px, 0.92fr) minmax(380px, 1.08fr);
+  }
+}
+
+.masonry-column {
+  background-clip: padding-box;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
 }

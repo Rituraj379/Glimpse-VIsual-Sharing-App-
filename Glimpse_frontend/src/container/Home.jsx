@@ -1,42 +1,58 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { HiMenu } from 'react-icons/hi';
+import { useEffect, useRef, useState } from 'react';
 import { AiFillCloseCircle } from 'react-icons/ai';
+import { HiMenu } from 'react-icons/hi';
 import { Link, Route, Routes } from 'react-router-dom';
 
-import { Sidebar, UserProfile } from '../components';
-import { userQuery } from '../utils/data';
-import { sanityClient } from '../client';
-import Pins from './Pins';
+import { Chatbot, Sidebar, UserProfile } from '../components';
 import logo from '../Assets0/logo.png';
+import { ensureUserExists, getUser } from '../utils/api';
+import { fetchUser, persistUser } from '../utils/fetchuser';
+import Pins from './Pins';
 
 const Home = () => {
   const [toggleSidebar, setToggleSidebar] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => fetchUser());
   const scrollRef = useRef(null);
 
-  // Get user from localStorage and fetch full user data
   useEffect(() => {
-    const getUserInfo = () => {
+    const loadUser = async () => {
+      const localUser = fetchUser();
+
+      if (!localUser?._id) {
+        return;
+      }
+
       try {
-        const userStr = localStorage.getItem('user');
-        if (userStr && userStr !== 'undefined') {
-          return JSON.parse(userStr);
+        const profile = await getUser(localUser._id);
+        const resolvedProfile = localUser.isGuest ? { ...profile, isGuest: true } : profile;
+        setUser(resolvedProfile);
+        persistUser(resolvedProfile);
+      } catch (error) {
+        console.error('Error fetching user', error);
+        if (error.status === 404) {
+          try {
+            const restoredUser = await ensureUserExists({
+              googleId: localUser.googleId || localUser._id,
+              userName: localUser.userName,
+              image: localUser.image,
+            });
+
+            if (restoredUser) {
+              setUser(restoredUser);
+              persistUser(restoredUser);
+              return;
+            }
+          } catch (restoreError) {
+            console.error('Error restoring missing user', restoreError);
+          }
         }
-        return null;
-      } catch (err) {
-        console.error('Failed to parse user:', err);
-        localStorage.removeItem('user');
-        return null;
+
+        setUser(localUser);
+        persistUser(localUser);
       }
     };
 
-    const userInfo = getUserInfo();
-    if (!userInfo?.googleId) return;
-
-    const query = userQuery(userInfo.googleId);
-    sanityClient.fetch(query).then((data) => {
-      if (data?.length > 0) setUser(data[0]);
-    });
+    loadUser();
   }, []);
 
   useEffect(() => {
@@ -44,32 +60,29 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="flex bg-gray-50 md:flex-row flex-col h-screen transition-height duration-75 ease-out">
-      {/* Sidebar for medium+ screens */}
-      <div className="hidden md:flex h-screen flex-initial">
+    <div className="app-shell flex min-h-screen flex-col md:flex-row">
+      <div className="hidden md:flex md:flex-initial">
         <Sidebar user={user} />
       </div>
 
-      {/* Topbar for small screens */}
-      <div className="flex md:hidden flex-row">
-        <div className="p-2 w-full flex flex-row justify-between items-center shadow-md">
+      <div className="flex flex-row md:hidden">
+        <div className="glass-panel m-3 flex w-full flex-row items-center justify-between rounded-[24px] px-3 py-3">
           <HiMenu fontSize={40} className="cursor-pointer" onClick={() => setToggleSidebar(true)} />
           <Link to="/">
-            <img src={logo} alt="logo" className="w-28" />
+            <img src={logo} alt="logo" className="h-9 w-auto object-contain" />
           </Link>
           <Link to={`/user-profile/${user?._id}`}>
             <img
               src={user?.image || 'https://i.stack.imgur.com/l60Hf.png'}
               alt="user-pic"
-              className="w-9 h-9 rounded-full object-cover"
+              className="h-10 w-10 rounded-2xl object-cover"
             />
           </Link>
         </div>
 
-        {/* Sidebar drawer */}
         {toggleSidebar && (
-          <div className="fixed w-4/5 bg-white h-screen overflow-y-auto shadow-md z-10 animate-slide-in">
-            <div className="absolute w-full flex justify-end items-center p-2">
+          <div className="fixed inset-y-0 left-0 z-20 w-[88%] animate-slide-in overflow-y-auto">
+            <div className="absolute right-6 top-6 z-30 flex items-center justify-end">
               <AiFillCloseCircle fontSize={30} className="cursor-pointer" onClick={() => setToggleSidebar(false)} />
             </div>
             <Sidebar closeToggle={setToggleSidebar} user={user} />
@@ -77,13 +90,14 @@ const Home = () => {
         )}
       </div>
 
-      {/* Main content */}
-      <div className="pb-2 flex-1 h-screen overflow-y-scroll" ref={scrollRef}>
+      <div className="min-w-0 flex-1 overflow-y-auto px-3 pb-3 md:px-4 md:pb-4" ref={scrollRef}>
         <Routes>
           <Route path="/user-profile/:userId" element={<UserProfile />} />
           <Route path="/*" element={<Pins user={user} />} />
         </Routes>
       </div>
+
+      <Chatbot />
     </div>
   );
 };

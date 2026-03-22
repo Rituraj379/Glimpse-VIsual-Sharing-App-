@@ -1,20 +1,20 @@
-import './App.css'
-import React from 'react'
-import { Routes, Route , Navigate} from 'react-router-dom'
-import Home from './container/Home'
-import Login from './components/Login'
+import './App.css';
+import { Navigate, Route, Routes } from 'react-router-dom';
+
+import Login from './components/Login';
+import Home from './container/Home';
+import { fetchUser, isGuestUser } from './utils/fetchuser';
 
 function App() {
-  console.log('App render');
+  const user = fetchUser();
+  const guest = isGuestUser(user);
+
   return (
-    <>
-      {console.log('Rendering Routes in App')}
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/*" element={<Home />} />
-      </Routes>
-    </>
-  )
+    <Routes>
+      <Route path="/login" element={user && !guest ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/*" element={user ? <Home /> : <Navigate to="/login" replace />} />
+    </Routes>
+  );
 }
 
-export default App
+export default App;
