@@ -28,7 +28,7 @@ Glimpse is a full-stack visual sharing platform inspired by Pinterest, built wit
 | Database | MongoDB, Mongoose |
 | Authentication | Google OAuth |
 | AI | Google Gemini API |
-| File Uploads | Multer |
+| File Uploads | Multer, Cloudinary |
 | Deployment | Vercel, Render, MongoDB Atlas |
 
 ## Project Structure
@@ -92,6 +92,10 @@ CLIENT_URL=http://localhost:5181
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
 GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+CLOUDINARY_FOLDER=glimpse
 ```
 
 Run the backend:
@@ -134,6 +138,7 @@ npm run dev
 - Frontend deployed on Vercel
 - Backend deployed on Render
 - Database hosted on MongoDB Atlas
+- Images stored on Cloudinary
 
 ### Frontend Environment Variables
 
@@ -151,20 +156,24 @@ CLIENT_URL=http://localhost:5181,https://glimpse-v-isual-sharing-app.vercel.app
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
 GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+CLOUDINARY_FOLDER=glimpse
 ```
 
 ## Notes
 
 - The backend root URL is an API service, so opening `/` directly on Render may show `Cannot GET /`, which is expected.
 - For production Google login, add your Vercel domain to Google OAuth authorized origins.
-- Uploaded files are currently handled by the backend server, so production file persistence should be planned carefully for long-term scaling.
+- Cloudinary is recommended in production so uploads do not disappear after Render restarts or redeploys.
 
 ## Future Improvements
 
-- Cloud storage for uploads
 - Better AI-powered suggestions and chat memory
 - Notifications and richer social interactions
 - Better analytics and pin recommendations
+- Collections and personalized feeds
 
 ## Author
 

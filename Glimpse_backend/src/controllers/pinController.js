@@ -1,3 +1,6 @@
+import fs from 'fs/promises';
+import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import { Pin } from '../models/Pin.js';
 import { User } from '../models/User.js';
 import { serializePin } from '../utils/serializers.js';
@@ -8,8 +11,60 @@ const pinPopulation = [
   { path: 'comments.postedBy' },
 ];
 
+const uploadsDir = path.resolve('uploads');
 const buildImageUrl = (req, fileName) => `${req.protocol}://${req.get('host')}/uploads/${fileName}`;
 const isGuestUser = (user) => user?.googleId?.startsWith('guest-');
+const hasCloudinaryConfig = () =>
+  Boolean(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+  );
+
+const getSafeFileName = (originalName) => originalName.replace(/\s+/g, '-').toLowerCase();
+
+const uploadToCloudinary = (fileBuffer, originalName) => {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: process.env.CLOUDINARY_FOLDER || 'glimpse',
+        resource_type: 'image',
+        public_id: `${Date.now()}-${getSafeFileName(originalName).replace(/\.[^.]+$/, '')}`,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(result.secure_url);
+      }
+    );
+
+    uploadStream.end(fileBuffer);
+  });
+};
+
+const saveImageLocally = async (req, file) => {
+  await fs.mkdir(uploadsDir, { recursive: true });
+  const fileName = `${Date.now()}-${getSafeFileName(file.originalname)}`;
+  await fs.writeFile(path.join(uploadsDir, fileName), file.buffer);
+  return buildImageUrl(req, fileName);
+};
+
+const resolveImageUrl = async (req, file) => {
+  if (hasCloudinaryConfig()) {
+    return uploadToCloudinary(file.buffer, file.originalname);
+  }
+
+  return saveImageLocally(req, file);
+};
 
 export const getPins = async (req, res) => {
   const { category, search } = req.query;
@@ -78,12 +133,14 @@ export const createPin = async (req, res) => {
     return;
   }
 
+  const imageUrl = await resolveImageUrl(req, req.file);
+
   const pin = await Pin.create({
     title,
     about,
     destination,
     category: category.toLowerCase(),
-    imageUrl: buildImageUrl(req, req.file.filename),
+    imageUrl,
     postedBy: user._id,
   });
 
