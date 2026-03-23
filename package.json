@@ -1,9 +1,16 @@
 {
-  "dependencies": {
-    "mongodb": "^7.1.0",
-    "react-loader-spinner": "^6.1.6",
-    "react-window": "^1.8.11"
-  },git push origin main
-  
-  "abc": "d ef gh jbhjbshbhb"
+  "name": "glimpse",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Full-stack visual sharing app with a React + Vite frontend and MERN backend.",
+  "workspaces": [
+    "Glimpse_frontend",
+    "Glimpse_backend"
+  ],
+  "scripts": {
+    "frontend:dev": "npm run dev --workspace Glimpse_frontend",
+    "frontend:build": "npm run build --workspace Glimpse_frontend",
+    "backend:dev": "npm run dev --workspace Glimpse_backend",
+    "backend:start": "npm run start --workspace Glimpse_backend"
+  }
 }
