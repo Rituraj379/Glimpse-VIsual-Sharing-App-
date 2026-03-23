@@ -78,6 +78,10 @@ export const urlFor = (image) => {
     return '';
   }
 
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && rawUrl.startsWith('http://')) {
+    return rawUrl.replace(/^http:\/\//, 'https://');
+  }
+
   if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
     return rawUrl;
   }

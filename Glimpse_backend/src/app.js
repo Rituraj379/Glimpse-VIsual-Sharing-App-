@@ -8,6 +8,7 @@ import pinRoutes from './routes/pinRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use(
   cors({
